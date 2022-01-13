@@ -436,7 +436,10 @@ cdef class ZFS(object):
                 # This is okay when non blocking behavior is desired
                 return None
             else:
-                return {'dropped': dropped, **dict(NVList(<uintptr_t>nvl))}
+                retval = {'dropped': dropped, **dict(NVList(<uintptr_t>nvl))}
+                with nogil:
+                    nvpair.nvlist_free(nvl)
+                return retval
 
     @staticmethod
     cdef int __iterate_props(int proptype, void *arg) nogil:
@@ -879,6 +882,9 @@ cdef class ZFS(object):
                     snap_data['holds'] = {}
                 else:
                     snap_data['holds'] = dict(NVList(<uintptr_t> ptr))
+
+            if ret == 0:
+                nvpair.nvlist_free(ptr)
 
         if mounted:
             ret = libzfs.zfs_is_mounted(handle, &mntpt)
@@ -1518,7 +1524,10 @@ cdef class ZFS(object):
             if nvl == NULL:
                 raise ZFSException(self.errno, self.errstr)
 
-            return dict(NVList(<uintptr_t>nvl))
+            retval = dict(NVList(<uintptr_t>nvl))
+            with nogil:
+                nvpair.nvlist_free(nvl)
+            return retval
 
 
 cdef class ZPoolProperty(object):
@@ -3845,8 +3854,10 @@ cdef class ZFSSnapshot(ZFSResource):
             if ret != 0:
                 raise self.root.get_error()
 
-            nvl = NVList(<uintptr_t>ptr)
-            return dict(nvl)
+            retval = dict(NVList(<uintptr_t>ptr))
+            with nogil:
+                nvpair.nvlist_free(ptr)
+            return retval
 
     property mountpoint:
         def __get__(self):
@@ -4003,8 +4014,10 @@ def read_label(device):
         raise OSError(errno.EINVAL, 'Cannot read label')
 
     os.close(fd)
-    nvlist = NVList(<uintptr_t>handle)
-    return dict(nvlist)
+    retval = dict(NVList(<uintptr_t>handle))
+    with nogil:
+        nvpair.nvlist_free(handle)
+    return retval
 
 
 def clear_label(device):
