@@ -436,7 +436,7 @@ cdef class ZFS(object):
                 # This is okay when non blocking behavior is desired
                 return None
             else:
-                return {'dropped': dropped, **dict(NVList(<uintptr_t>nvl))}
+                return {'dropped': dropped, **dict(NVList(<uintptr_t>nvl, take=True))}
 
     @staticmethod
     cdef int __iterate_props(int proptype, void *arg) nogil:
@@ -878,7 +878,7 @@ cdef class ZFS(object):
                 if ret != 0:
                     snap_data['holds'] = {}
                 else:
-                    snap_data['holds'] = dict(NVList(<uintptr_t> ptr))
+                    snap_data['holds'] = dict(NVList(<uintptr_t> ptr, take=True))
 
         if mounted:
             ret = libzfs.zfs_is_mounted(handle, &mntpt)
@@ -1518,7 +1518,7 @@ cdef class ZFS(object):
             if nvl == NULL:
                 raise ZFSException(self.errno, self.errstr)
 
-            return dict(NVList(<uintptr_t>nvl))
+            return dict(NVList(<uintptr_t>nvl, take=True))
 
 
 cdef class ZPoolProperty(object):
@@ -3845,7 +3845,7 @@ cdef class ZFSSnapshot(ZFSResource):
             if ret != 0:
                 raise self.root.get_error()
 
-            nvl = NVList(<uintptr_t>ptr)
+            nvl = NVList(<uintptr_t>ptr, take=True)
             return dict(nvl)
 
     property mountpoint:
@@ -4003,7 +4003,7 @@ def read_label(device):
         raise OSError(errno.EINVAL, 'Cannot read label')
 
     os.close(fd)
-    nvlist = NVList(<uintptr_t>handle)
+    nvlist = NVList(<uintptr_t>handle, take=True)
     return dict(nvlist)
 
 

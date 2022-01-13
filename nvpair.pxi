@@ -15,9 +15,12 @@ cdef class NVList(object):
     cdef nvpair.nvlist_t* handle
     cdef int foreign
 
-    def __init__(self, uintptr_t nvlist=0, otherdict=None):
+    def __init__(self, uintptr_t nvlist=0, otherdict=None, take=False):
         if nvlist:
-            self.foreign = True
+            if take:
+                self.foreign = False
+            else:
+                self.foreign = True
             self.handle = <nvpair.nvlist_t*>nvlist
         else:
             self.foreign = False
